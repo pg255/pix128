@@ -41,6 +41,7 @@ pix128 library update [id] # if there is new version of the library out, downloa
 pix128 template # lists templates in [local folder]
 pix128 template download [id] # downloads template from [git repo] to [local folder]
 pix128 template delete [id] # deletes template from [local folder]
+pix128 template update [id] # if there is new version of the library out, download it from [git repo] to [local folder]
 
 pix128 new [template] [id] # makes new pix128 project from template, into the folder you are
 pix128 new [template] # ("pix128 new" but asks for project id manually)
