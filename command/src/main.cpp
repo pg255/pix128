@@ -3,19 +3,26 @@
 #include <string>
 #include <filesystem>
 
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "httplib.h"
+
 namespace fs = std::filesystem;
 using std::cout;
+using std::cerr;
 using std::cin;
 using std::endl;
 using std::string;
-
-#define VERSION "0.0.0"
-#define debug_mode ON
 
 #define ORANGE1 "\e[38;5;208m"
 #define ORANGE2 "\e[38;5;214m"
 #define ORANGE3 "\e[38;5;220m"
 #define RESET "\e[0m"
+
+#define SERR cerr << ORANGE1 << "ERROR: " <<
+#define EERR << RESET << '\n';
+
+#define VERSION "0.0.0"
+#define debug_mode ON
 
 #if debug_mode == ON
 
@@ -48,7 +55,7 @@ using std::string;
 		if (home) {
 			return std::string(home) + "\\AppData\\Roaming";
 		}
-		cout << ORANGE1 << "ERROR: Cannot find config folder path (APPDATA not set)" << RESET << endl;
+		SERR "Cannot find config folder path (APPDATA not set)" EERR
 		return "";
 	}
 
@@ -62,7 +69,7 @@ using std::string;
 		if (home) {
 			return std::string(home) + "/.config";
 		}
-		cout << ORANGE1 << "ERROR: Cannot find home folder" << RESET << endl;
+		SERR "Cannot find home folder" EERR;
 		return "";
 	}
 
@@ -72,7 +79,49 @@ using std::string;
 
 #endif
 
+#define REPO_DOMAIN "raw.githubusercontent.com"
+#define REPO_PATH "/pg255/pix128/main"
+
+struct requestedFile {
+	std::string file;
+	char found = 2;
+};
+
+requestedFile requestFile(std::string path) {
+	httplib::SSLClient cli(REPO_DOMAIN);
+
+    cli.set_follow_location(true);
+    cli.enable_server_certificate_verification(true);
+
+    auto res = cli.Get(REPO_PATH + path);
+
+	requestedFile file = {};
+
+    if (res && res->status == 200) {
+        file.file = res->body;
+		file.found = 1;
+    } else if (res && res->status == 404) {
+		file.found = 0;
+	} else if (res) {
+        SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << path << "' failed with status: " << res->status EERR;
+    } else {
+        SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << path << "' failed with error: " << httplib::to_string(res.error()) EERR;
+    }
+	return file;
+}
+
 int main(int argc, char* argv[]) {
+	/* example of file request
+
+	requestedFile test = requestFile("/libraries/template/library.toml");
+	if (test.found == 1) {
+		cout << test.file << endl;
+	} else if (test.found == 0) {
+		cout << "Library \"" << "test" << "\" not found" << endl;
+	}
+	
+	*/
+
 	string configPath = getConfigFolderPath() + "/pix128";
 	if (!fs::exists(configPath)) {
 		try {
@@ -84,7 +133,7 @@ int main(int argc, char* argv[]) {
 			cout << ORANGE2 << "Making config folder..." << RESET << endl;
 			cout << ORANGE3 << "Welcome to Pix128!" << RESET << endl;
 		} catch (const std::filesystem::filesystem_error& e) {
-			cout << ORANGE1 << "Error while creating config folder: " << e.what() << std::endl;
+			SERR "error while creating config folder: " << e.what() ERR
 		}
     }
 
@@ -102,7 +151,7 @@ int main(int argc, char* argv[]) {
 		
 	}
 	if (std::string(argv[1]) == "library") {
-		
+
 	}
 	if (std::string(argv[1]) == "template") {
 		

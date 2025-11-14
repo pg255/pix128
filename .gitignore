@@ -1,4 +1,4 @@
 .directory
 .vscode
-.vscode/*
+.cache
 command/build/*
