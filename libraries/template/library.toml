@@ -1,8 +1,8 @@
 [library]
-id: template # Must be same as the folder name. Can only include: lowercase letters a-z, numbers 0-9, underscores _.
-description: "This is template of pix128 library" # Description of the library
-verion: 0 # Any time you change the library, increase this number
+id = "template" # Must be same as the folder name. Can only include = lowercase letters a-z, numbers 0-9, underscores _.
+description = "This is template of pix128 library" # Description of the library
+verion = 0 # Any time you change the library, increase this number
 
 [imports]
-javascript-files: ["index.js"]
-css-files: ["style.css"]
+javascript-files = ["index.js"]
+css-files = ["style.css"]
