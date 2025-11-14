@@ -6,6 +6,8 @@
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
 
+#include "toml.hpp"
+
 namespace fs = std::filesystem;
 using std::cout;
 using std::cerr;
@@ -111,17 +113,6 @@ requestedFile requestFile(std::string path) {
 }
 
 int main(int argc, char* argv[]) {
-	/* example of file request
-
-	requestedFile test = requestFile("/libraries/template/library.toml");
-	if (test.found == 1) {
-		cout << test.file << endl;
-	} else if (test.found == 0) {
-		cout << "Library \"" << "test" << "\" not found" << endl;
-	}
-	
-	*/
-
 	string configPath = getConfigFolderPath() + "/pix128";
 	if (!fs::exists(configPath)) {
 		try {
@@ -133,7 +124,7 @@ int main(int argc, char* argv[]) {
 			cout << ORANGE2 << "Making config folder..." << RESET << endl;
 			cout << ORANGE3 << "Welcome to Pix128!" << RESET << endl;
 		} catch (const std::filesystem::filesystem_error& e) {
-			SERR "error while creating config folder: " << e.what() ERR
+			SERR "error while creating config folder: " << e.what() EERR;
 		}
     }
 
@@ -162,5 +153,16 @@ int main(int argc, char* argv[]) {
 	if (std::string(argv[1]) == "project") {
 		
 	}
+	/*if (std::string(argv[1]) == "test") {
+		requestedFile test = requestFile("/libraries/template/library.toml");
+		if (test.found == 1) {
+			auto tomf = toml::parse(test.file);
+			log(tomf["library"]["id"].value_or(""));
+			log(tomf["library"]["description"].value_or(""));
+			log(tomf["library"]["version"].value_or(0));
+		} else if (test.found == 0) {
+			cout << "Library \"" << "test" << "\" not found" << endl;
+		}
+	}*/
     return 0;
 }
