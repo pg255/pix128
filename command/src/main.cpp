@@ -3,10 +3,11 @@
 #include <string>
 #include <filesystem>
 
+#include "toml.hpp"
+#include "json.hpp"
+
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
-
-#include "toml.hpp"
 
 namespace fs = std::filesystem;
 using std::cout;
@@ -84,85 +85,159 @@ using std::string;
 #define REPO_DOMAIN "raw.githubusercontent.com"
 #define REPO_PATH "/pg255/pix128/main"
 
-struct requestedFile {
+string config_path;
+
+
+typedef char download_response;
+// everything successful: 0
+// file/folder not found: 1
+// error downloading file/folder: 2
+// error saving file/folder: 3
+
+struct downloaded_file {
 	std::string file;
-	char found = 2;
+	download_response found = 2;
 };
 
-requestedFile requestFile(std::string path) {
+downloaded_file download_and_read_file(std::string from) {
 	httplib::SSLClient cli(REPO_DOMAIN);
 
-    cli.set_follow_location(true);
-    cli.enable_server_certificate_verification(true);
+	cli.set_follow_location(true);
+	cli.enable_server_certificate_verification(true);
 
-    auto res = cli.Get(REPO_PATH + path);
+	auto res = cli.Get(REPO_PATH + from);
 
-	requestedFile file = {};
+	downloaded_file file = {};
 
-    if (res && res->status == 200) {
-        file.file = res->body;
-		file.found = 1;
-    } else if (res && res->status == 404) {
+	if (res && res->status == 200) {
+		file.file = res->body;
 		file.found = 0;
+	} else if (res && res->status == 404) {
+		file.found = 1;
 	} else if (res) {
-        SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << path << "' failed with status: " << res->status EERR;
-    } else {
-        SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << path << "' failed with error: " << httplib::to_string(res.error()) EERR;
-    }
+		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with status: " << res->status EERR;
+		file.found = 2;
+	} else {
+		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with error: " << httplib::to_string(res.error()) EERR;
+		file.found = 2;
+	}
 	return file;
 }
 
+download_response download_file(std::string from, std::string to) {
+	httplib::SSLClient cli(REPO_DOMAIN);
+
+	cli.set_follow_location(true);
+	cli.enable_server_certificate_verification(true);
+
+	auto res = cli.Get(REPO_PATH + from);
+	if (res && res->status == 200) {
+		fs::create_directories(
+			fs::path(config_path + to).parent_path()
+		);
+
+		std::ofstream f(config_path + to, std::ios::binary);
+		
+		if (!f.is_open()) {
+   			SERR "Error: cannot open file for writing: " << config_path + to EERR;
+	        return 3;
+	    }
+		
+		if (f.fail() || f.bad()) {
+			SERR "Error: writing to file failed: " << config_path + to EERR;
+			return 3;
+	    }
+	
+	    f.close();
+		f << res->body;
+		return 0;
+	} else if (res && res->status == 404) {
+		return 1;
+	} else if (res) {
+		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with status: " << res->status EERR;
+		return 2;
+	} else {
+		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with error: " << httplib::to_string(res.error()) EERR;
+		return 2;
+	}
+}
+
+download_response download_folder(std::string from, std::string to) {
+
+	return 0;
+}
+
 int main(int argc, char* argv[]) {
-	string configPath = getConfigFolderPath() + "/pix128";
-	if (!fs::exists(configPath)) {
+	config_path = getConfigFolderPath() + "/pix128";
+	if (!fs::exists(config_path)) {
 		try {
-			fs::create_directory(configPath);
-			fs::create_directory(configPath + "/templates");
-			fs::create_directory(configPath + "/engines");
-			fs::create_directory(configPath + "/libraries");
+			fs::create_directory(config_path);
+			fs::create_directory(config_path + "/templates");
+			fs::create_directory(config_path + "/engines");
+			fs::create_directory(config_path + "/libraries");
 
 			cout << ORANGE2 << "Making config folder..." << RESET << endl;
 			cout << ORANGE3 << "Welcome to Pix128!" << RESET << endl;
 		} catch (const std::filesystem::filesystem_error& e) {
 			SERR "error while creating config folder: " << e.what() EERR;
 		}
-    }
+	}
 
-    if (argc == 1) {
+	if (argc == 1) {
 		cout << "Pix128 " << VERSION << "\nRun --help for help" << endl;
 		return 0;
 	}
 	if (std::string(argv[1]) == "--help") {
-		
+
 	}
 	if (std::string(argv[1]) == "--version") {
-		cout  << "Pix128 " << VERSION << endl;
+		cout << "Pix128 " << VERSION << endl;
 	}
 	if (std::string(argv[1]) == "engine") {
-		
+		if (std::string(argv[2]) == "download") {
+
+		}
+		if (std::string(argv[2]) == "delete") {
+
+		}
+		if (std::string(argv[2]) == "update") {
+
+		}
 	}
 	if (std::string(argv[1]) == "library") {
 
 	}
 	if (std::string(argv[1]) == "template") {
-		
+
 	}
 	if (std::string(argv[1]) == "new") {
-		
+
 	}
 	if (std::string(argv[1]) == "project") {
-		
+
 	}
-	/*if (std::string(argv[1]) == "test") {
-		requestedFile test = requestFile("/libraries/template/library.toml");
-		if (test.found == 1) {
-			auto tomf = toml::parse(test.file);
-			log(tomf["library"]["id"].value_or(""));
-			log(tomf["library"]["description"].value_or(""));
-			log(tomf["library"]["version"].value_or(0));
-		} else if (test.found == 0) {
-			cout << "Library \"" << "test" << "\" not found" << endl;
+
+	#if debug_mode == ON
+		if (std::string(argv[1]) == "test1") {
+			downloaded_file test = download_and_read_file("/libraries/template/library.toml");
+			if (test.found == 0) {
+				auto tomf = toml::parse(test.file);
+				log(tomf["id"].value_or(""));
+				log(tomf["description"].value_or(""));
+				log(tomf["version"].value_or(0));
+			} else if (test.found == 1) {
+				cout << "Library \"" << "test" << "\" not found" << endl;
+			}
 		}
-	}*/
-    return 0;
+		if (std::string(argv[1]) == "test2") {
+			download_response response = download_file("/libraries/template/library.toml", "/libraries/library.toml");
+			if (response == 0) {
+				cout << "done" << endl;
+			} else if (response == 1) {
+				cout << "Library \"" << "test" << "\" not found" << endl;
+			}
+		}
+	#endif
+
+	return 0;
 }
