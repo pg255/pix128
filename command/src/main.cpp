@@ -83,7 +83,7 @@ using std::string;
 #endif
 
 #define REPO_DOMAIN "raw.githubusercontent.com"
-#define REPO_PATH "/pg255/pix128/main"
+#define REPO_PATH "/pg255/pix128/refs/heads/main"
 
 string config_path;
 
@@ -139,16 +139,16 @@ download_response download_file(std::string from, std::string to) {
 		std::ofstream f(config_path + to, std::ios::binary);
 		
 		if (!f.is_open()) {
-   			SERR "Error: cannot open file for writing: " << config_path + to EERR;
-	        return 3;
-	    }
+			SERR "Error: cannot open file for writing: " << config_path + to EERR;
+			return 3;
+		}
 		
 		if (f.fail() || f.bad()) {
 			SERR "Error: writing to file failed: " << config_path + to EERR;
 			return 3;
-	    }
-	
-	    f.close();
+		}
+
+		f.close();
 		f << res->body;
 		return 0;
 	} else if (res && res->status == 404) {
