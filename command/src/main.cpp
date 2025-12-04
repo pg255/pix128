@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <filesystem>
+#include <bits/stdc++.h>
 
 #include "toml.hpp"
 #include "json.hpp"
@@ -10,38 +11,25 @@
 #include "httplib.h"
 
 namespace fs = std::filesystem;
-using std::cout;
-using std::cerr;
-using std::cin;
-using std::endl;
-using std::string;
+using std::cout, std::cerr, std::cin, std::endl, std::string;
 
 #define ORANGE1 "\e[38;5;208m"
 #define ORANGE2 "\e[38;5;214m"
 #define ORANGE3 "\e[38;5;220m"
+#define DEBUGCOLOR "\e[0;36m"
 #define RESET "\e[0m"
 
 #define SERR cerr << ORANGE1 << "ERROR: " <<
 #define EERR << RESET << '\n';
 
 #define VERSION "0.0.0"
-#define debug_mode ON
 
-#if debug_mode == ON
 
-	#define DEB1 ORANGE1
-	#define DEB2 ORANGE2
-	#define DEB3 ORANGE3
-	#define DEB_RESET RESET
-
-	#define log(msg) cout << DEB1 << "#" << __LINE__ << " " << DEB3 << msg << DEB_RESET << endl;
-
-	#define here cout << DEB1 << "#" << __LINE__ << DEB3 << " HERE" << DEB_RESET << endl;
-
-	#define bp cout << DEB1 << "#" << __LINE__ << DEB2 << " [bp]" << DEB_RESET << cin.get() << endl;
-	#define bp_its(value) cout << DEB1 << "#" << __LINE__ << " " << DEB3 << value << DEB2 << " [bp]" << DEB_RESET << cin.get() << endl;
-	#define bp_is(name, value) cout << DEB1 << "#" << __LINE__ << DEB3 << " " << name << DEB1 << " is " << DEB3 << value << DEB2 << " [bp]" << DEB_RESET << cin.get() << endl;
-#endif
+#define bl(t1) cout << DEBUGCOLOR << "#" << __LINE__ << " " << t1; cin.get(); cout << RESET << endl;
+#define bl2(t1, t2) cout << DEBUGCOLOR << "#" << __LINE__ << " " << t1 << " : " << t2; cin.get(); cout << RESET << endl;
+#define bl3(t1, t2, t3) cout << DEBUGCOLOR << "#" << __LINE__ << " " << t1 << " : " << t2 << " : " << t3; cin.get(); cout << RESET << endl;
+#define jlog(t1) cout << DEBUGCOLOR << "#" << __LINE__ << " " << t1 << RESET << endl;
+#define pb pl("bp")
 
 
 #ifdef _WIN32
@@ -96,7 +84,7 @@ typedef char download_response;
 
 struct downloaded_file {
 	std::string file;
-	download_response found = 2;
+	download_response response = 2;
 };
 
 downloaded_file download_and_read_file(std::string from) {
@@ -111,15 +99,15 @@ downloaded_file download_and_read_file(std::string from) {
 
 	if (res && res->status == 200) {
 		file.file = res->body;
-		file.found = 0;
+		file.response = 0;
 	} else if (res && res->status == 404) {
-		file.found = 1;
+		file.response = 1;
 	} else if (res) {
 		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with status: " << res->status EERR;
-		file.found = 2;
+		file.response = 2;
 	} else {
 		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with error: " << httplib::to_string(res.error()) EERR;
-		file.found = 2;
+		file.response = 2;
 	}
 	return file;
 }
@@ -137,12 +125,12 @@ download_response download_file(std::string from, std::string to) {
 		);
 
 		std::ofstream f(config_path + to, std::ios::binary);
-		
+
 		if (!f.is_open()) {
 			SERR "Error: cannot open file for writing: " << config_path + to EERR;
 			return 3;
 		}
-		
+
 		if (f.fail() || f.bad()) {
 			SERR "Error: writing to file failed: " << config_path + to EERR;
 			return 3;
@@ -152,7 +140,7 @@ download_response download_file(std::string from, std::string to) {
 		f << res->body;
 		return 0;
 	} else if (res && res->status == 404) {
-		return 1;
+		SERR "File " << from << " not found" EERR
 	} else if (res) {
 		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with status: " << res->status EERR;
 		return 2;
@@ -160,9 +148,26 @@ download_response download_file(std::string from, std::string to) {
 		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with error: " << httplib::to_string(res.error()) EERR;
 		return 2;
 	}
+	
+	return 0;
 }
 
-download_response download_folder(std::string from, std::string to) {
+download_response download_folder(std::string path) {
+	downloaded_file file_list = download_and_read_file(path + "/.pix128files");
+	if (file_list.response == 0) {
+		std::stringstream ss(file_list.file);
+		string file_name;
+		while (std::getline(ss, file_name, '\n')) {
+			download_response file_response = download_file(path + "/" + file_name, path + "/" + file_name);
+			if (file_response == 0) {
+				continue;
+			} else {
+				return file_response;
+			}
+		}
+	} else {
+		return file_list.response;
+	}
 
 	return 0;
 }
@@ -220,12 +225,12 @@ int main(int argc, char* argv[]) {
 	#if debug_mode == ON
 		if (std::string(argv[1]) == "test1") {
 			downloaded_file test = download_and_read_file("/libraries/template/library.toml");
-			if (test.found == 0) {
+			if (test.response == 0) {
 				auto tomf = toml::parse(test.file);
-				log(tomf["id"].value_or(""));
-				log(tomf["description"].value_or(""));
-				log(tomf["version"].value_or(0));
-			} else if (test.found == 1) {
+				jlog(tomf["id"].value_or(""));
+				jlog(tomf["description"].value_or(""));
+				jlog(tomf["version"].value_or(0));
+			} else if (test.response == 1) {
 				cout << "Library \"" << "test" << "\" not found" << endl;
 			}
 		}
@@ -236,6 +241,9 @@ int main(int argc, char* argv[]) {
 			} else if (response == 1) {
 				cout << "Library \"" << "test" << "\" not found" << endl;
 			}
+		}
+		if (std::string(argv[1]) == "test3") {
+			download_folder("/templates/template/");
 		}
 	#endif
 
