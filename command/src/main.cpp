@@ -1,118 +1,111 @@
-#include <ostream>
 #include <iostream>
 #include <string>
 #include <filesystem>
-#include <bits/stdc++.h>
 
+//#include "debug255.hpp"
 #include "toml.hpp"
-#include "json.hpp"
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
 
 namespace fs = std::filesystem;
-using std::cout, std::cerr, std::cin, std::endl, std::string;
+
+//// Debug255 ////
+
+#define DEBUG255_COLOR "\e[0;36m"
+#define DEBUG255_RESET "\e[0m"
+#define DEBUG255_SYMBOL "#"
+#define DEBUG255_SPLIT " : "
+
+#define bl(t1) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
+#define bl2(t1, t2) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_SPLIT << t2; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
+#define bl3(t1, t2, t3) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_SPLIT << t2 << DEBUG255_SPLIT << t3; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
+#define LOG(t1) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_RESET << std::endl;
+#define bp bl("bp")
+
+//// Project macros ////
+
+#define VERSION "0.0.0"
 
 #define ORANGE1 "\e[38;5;208m"
 #define ORANGE2 "\e[38;5;214m"
 #define ORANGE3 "\e[38;5;220m"
-#define DEBUGCOLOR "\e[0;36m"
 #define RESET "\e[0m"
 
-#define SERR cerr << ORANGE1 << "ERROR: " <<
-#define EERR << RESET << '\n';
-
-#define VERSION "0.0.0"
-
-
-#define bl(t1) cout << DEBUGCOLOR << "#" << __LINE__ << " " << t1; cin.get(); cout << RESET << endl;
-#define bl2(t1, t2) cout << DEBUGCOLOR << "#" << __LINE__ << " " << t1 << " : " << t2; cin.get(); cout << RESET << endl;
-#define bl3(t1, t2, t3) cout << DEBUGCOLOR << "#" << __LINE__ << " " << t1 << " : " << t2 << " : " << t3; cin.get(); cout << RESET << endl;
-#define jlog(t1) cout << DEBUGCOLOR << "#" << __LINE__ << " " << t1 << RESET << endl;
-#define pb pl("bp")
-
-
-#ifdef _WIN32
-
-	#include <windows.h>
-
-	std::string getConfigFolderPath() {
-		const char* appdata = getenv("APPDATA");
-		if (appdata) {
-			return std::string(appdata);
-		}
-		// Fallback: try to get USERPROFILE
-		const char* home = getenv("USERPROFILE");
-		if (home) {
-			return std::string(home) + "\\AppData\\Roaming";
-		}
-		SERR "Cannot find config folder path (APPDATA not set)" EERR
-		return "";
-	}
-
-#elif __linux__
-
-	#include <unistd.h>
-	#include <pwd.h>
-
-	std::string getConfigFolderPath() {
-		const char* home = getenv("HOME");
-		if (home) {
-			return std::string(home) + "/.config";
-		}
-		SERR "Cannot find home folder" EERR;
-		return "";
-	}
-
-#else
-
-	#error "Unsupported platform"
-
-#endif
+#define ERROR(msg) std::cerr << ORANGE1 << "ERROR: " << msg << RESET << '\n'
 
 #define REPO_DOMAIN "raw.githubusercontent.com"
 #define REPO_PATH "/pg255/pix128/refs/heads/main"
 
-string config_path;
+//// Global variables ////
 
+std::string configPath;
 
-typedef char download_response;
-// everything successful: 0
-// file/folder not found: 1
-// error downloading file/folder: 2
-// error saving file/folder: 3
+//// SO aka System Operations ///
+ 
+ /* Functions:
+  * downloadAndReadFile()
+  * downloadFile()
+  * downloadFolder()
+  * 
+  * createFile()
+  * readFile()
+  * editFile()
+  * 
+  * deleteFolder()
+  * copyFolder()
+  * 
+  * listFolders()
+  * getConfigFolder()
+  */
 
-struct downloaded_file {
-	std::string file;
-	download_response response = 2;
+enum class SoResponse {
+	success,
+	localNotFound,
+	repoNotFound,
+	repoError,
+	localWritingError,
+	otherError
 };
 
-downloaded_file download_and_read_file(std::string from) {
-	httplib::SSLClient cli(REPO_DOMAIN);
+struct SoContent {
+	std::string content;
+	SoResponse response;
+};
 
+struct SoPath {
+	std::string path;
+	SoResponse response;
+};
+
+SoContent downloadAndReadFile(std::string from) {
+	httplib::SSLClient cli(REPO_DOMAIN);
+	
 	cli.set_follow_location(true);
 	cli.enable_server_certificate_verification(true);
 
 	auto res = cli.Get(REPO_PATH + from);
 
-	downloaded_file file = {};
+	SoContent file;
 
 	if (res && res->status == 200) {
-		file.file = res->body;
-		file.response = 0;
+		file.content = res->body;
+		file.response = SoResponse::success;
 	} else if (res && res->status == 404) {
-		file.response = 1;
+		file.response = SoResponse::repoNotFound;
 	} else if (res) {
-		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with status: " << res->status EERR;
-		file.response = 2;
+		ERROR("Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with status: " << res->status);
+		file.response = SoResponse::repoError;
 	} else {
-		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with error: " << httplib::to_string(res.error()) EERR;
-		file.response = 2;
+		ERROR("Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with error: " << httplib::to_string(res.error()));
+		file.response = SoResponse::repoError;
 	}
+	
 	return file;
 }
 
-download_response download_file(std::string from, std::string to) {
+SoResponse downloadFile(std::string from, std::string to) {	
+	
 	httplib::SSLClient cli(REPO_DOMAIN);
 
 	cli.set_follow_location(true);
@@ -121,86 +114,158 @@ download_response download_file(std::string from, std::string to) {
 	auto res = cli.Get(REPO_PATH + from);
 	if (res && res->status == 200) {
 		fs::create_directories(
-			fs::path(config_path + to).parent_path()
+			fs::path(configPath + to).parent_path()
 		);
 
-		std::ofstream f(config_path + to, std::ios::binary);
+		std::ofstream f(configPath + to, std::ios::binary);
 
 		if (!f.is_open()) {
-			SERR "Error: cannot open file for writing: " << config_path + to EERR;
-			return 3;
+			ERROR("Error: cannot open file for writing: " << configPath + to);
+			return SoResponse::localWritingError;
 		}
 
 		if (f.fail() || f.bad()) {
-			SERR "Error: writing to file failed: " << config_path + to EERR;
-			return 3;
+			ERROR("Error: writing to file failed: " << configPath + to);
+			return SoResponse::localWritingError;
 		}
 
-		f.close();
 		f << res->body;
-		return 0;
+		f.close();
+		return SoResponse::success;
 	} else if (res && res->status == 404) {
-		SERR "File " << from << " not found" EERR
+		return SoResponse::repoNotFound;
 	} else if (res) {
-		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with status: " << res->status EERR;
-		return 2;
+		ERROR("Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with status: " << res->status);
+		return SoResponse::repoError;
 	} else {
-		SERR "Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with error: " << httplib::to_string(res.error()) EERR;
-		return 2;
+		ERROR("Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with error: " << httplib::to_string(res.error()));
+		return SoResponse::repoError;
 	}
 	
-	return 0;
+	return SoResponse::success;
 }
 
-download_response download_folder(std::string path) {
-	downloaded_file file_list = download_and_read_file(path + "/.pix128files");
-	if (file_list.response == 0) {
-		std::stringstream ss(file_list.file);
-		string file_name;
-		while (std::getline(ss, file_name, '\n')) {
-			download_response file_response = download_file(path + "/" + file_name, path + "/" + file_name);
-			if (file_response == 0) {
+SoResponse downloadFolder(std::string path) {
+	SoContent fileList = downloadAndReadFile(path + "/.pix128files");
+	
+	if (fileList.response == SoResponse::success) {
+		std::stringstream ss(fileList.content);
+		std::string fileName;
+		while (std::getline(ss, fileName, '\n')) {
+			SoResponse fileResponse = downloadFile(path + "/" + fileName, path + "/" + fileName);
+			if (fileResponse == SoResponse::success) {
 				continue;
-			} else {
-				return file_response;
+			} else if (fileResponse == SoResponse::repoNotFound) {
+				ERROR("There is an error in " + path + "/.pix128files");
+				return SoResponse::otherError;
 			}
+			return fileResponse;
 		}
 	} else {
-		return file_list.response;
+		return fileList.response;
 	}
 
-	return 0;
+	return SoResponse::success;
 }
 
-int main(int argc, char* argv[]) {
-	config_path = getConfigFolderPath() + "/pix128";
-	if (!fs::exists(config_path)) {
-		try {
-			fs::create_directory(config_path);
-			fs::create_directory(config_path + "/templates");
-			fs::create_directory(config_path + "/engines");
-			fs::create_directory(config_path + "/libraries");
+#ifdef _WIN32
 
-			cout << ORANGE2 << "Making config folder..." << RESET << endl;
-			cout << ORANGE3 << "Welcome to Pix128!" << RESET << endl;
+	#include <windows.h>
+
+	SoPath getConfigFolder() {
+		SoPath path;
+		
+		const char* appdata = getenv("APPDATA");
+		if (appdata) {
+			path.path = std::string(appdata);
+			path.response = SoResponse::success;
+			return path;
+		}
+		
+		// Fallback: try to get USERPROFILE
+		const char* home = getenv("USERPROFILE");
+		if (home) {
+			path.path = std::string(home) + "\\AppData\\Roaming";
+			path.response = SoResponse::success;
+			return path;
+		}
+		
+		path.response = SoResponse::localNotFound;
+		ERROR("Cannot find config folder path (APPDATA not set)");
+		return path;
+	}
+
+#elif __linux__
+
+	#include <unistd.h>
+	#include <pwd.h>
+
+	SoPath getConfigFolder() {
+		SoPath path;
+		const char* home = getenv("HOME");
+		if (home) {
+			path.path = std::string(home) + "/.config";
+			path.response = SoResponse::success;
+			return path;
+		}
+		path.response = SoResponse::localNotFound;
+		ERROR("Cannot find home folder");
+		return path;
+	}
+
+#else
+
+	#error "Unsupported platform"
+
+#endif
+
+//// main ////
+
+int main(int argc, char* argv[]) {
+	SoPath soConfigPath = getConfigFolder();
+	if (soConfigPath.response != SoResponse::success) {
+		ERROR("Can't continue without having config path");
+		return 1;
+	}
+	
+	configPath = soConfigPath.path + "/pix128";
+	#define DEBUG255_COLOR "\e[0;36m"
+#define DEBUG255_RESET "\e[0m"
+#define DEBUG255_SYMBOL "#"
+#define DEBUG255_SPLIT " : "
+
+#define bl(t1) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
+#define bl2(t1, t2) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_SPLIT << t2; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
+#define bl3(t1, t2, t3) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_SPLIT << t2 << DEBUG255_SPLIT << t3; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
+#define LOG(t1) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_RESET << std::endl;
+#define bp bl("bp")
+	if (!fs::exists(configPath)) {
+		try {
+			fs::create_directory(configPath);
+			fs::create_directory(configPath + "/templates");
+			fs::create_directory(configPath + "/engines");
+			fs::create_directory(configPath + "/libraries");
+
+			std::cout << ORANGE2 << "Making config folder..." << RESET << std::endl;
+			std::cout << ORANGE3 << "Welcome to Pix128!" << RESET << std::endl;
 		} catch (const std::filesystem::filesystem_error& e) {
-			SERR "error while creating config folder: " << e.what() EERR;
+			ERROR("Error while creating config folder: " << e.what());
 		}
 	}
 
 	if (argc == 1) {
-		cout << "Pix128 " << VERSION << "\nRun --help for help" << endl;
+		std::cout << "Pix128 " << VERSION << "\nRun --help for help" << std::endl;
 		return 0;
 	}
 	if (std::string(argv[1]) == "--help") {
 
 	}
 	if (std::string(argv[1]) == "--version") {
-		cout << "Pix128 " << VERSION << endl;
+		std::cout << "Pix128 " << VERSION << std::endl;
 	}
 	if (std::string(argv[1]) == "engine") {
 		if (std::string(argv[2]) == "download") {
-
+			
 		}
 		if (std::string(argv[2]) == "delete") {
 
@@ -224,26 +289,31 @@ int main(int argc, char* argv[]) {
 
 	#if debug_mode == ON
 		if (std::string(argv[1]) == "test1") {
-			downloaded_file test = download_and_read_file("/libraries/template/library.toml");
-			if (test.response == 0) {
-				auto tomf = toml::parse(test.file);
-				jlog(tomf["id"].value_or(""));
-				jlog(tomf["description"].value_or(""));
-				jlog(tomf["version"].value_or(0));
-			} else if (test.response == 1) {
-				cout << "Library \"" << "test" << "\" not found" << endl;
+			SoContent test = downloadAndReadFile("/libraries/template/library.toml");
+			if (test.response == SoResponse::success) {
+				auto tomf = toml::parse(test.content);
+				LOG(tomf["id"].value_or(""));
+				LOG(tomf["description"].value_or(""));
+				LOG(tomf["version"].value_or(0));
+			} else if (test.response == SoResponse::repoNotFound) {
+				std::cout << "Library \"" << "test" << "\" not found" << std::endl;
 			}
 		}
+		
 		if (std::string(argv[1]) == "test2") {
-			download_response response = download_file("/libraries/template/library.toml", "/libraries/library.toml");
-			if (response == 0) {
-				cout << "done" << endl;
-			} else if (response == 1) {
-				cout << "Library \"" << "test" << "\" not found" << endl;
+			SoResponse response = downloadFile("/libraries/template/library.toml", "/libraries/library.toml");
+			if (response == SoResponse::success) {
+				LOG("YAY!");
+			} else if (response == SoResponse::repoNotFound) {
+				std::cout << "Library \"" << "test" << "\" not found" << std::endl;
 			}
 		}
+		
 		if (std::string(argv[1]) == "test3") {
-			download_folder("/templates/template/");
+			SoResponse folder = downloadFolder("/templates/template/");
+			if (folder == SoResponse::success) {
+				LOG("YAY!");
+			}
 		}
 	#endif
 
