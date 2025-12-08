@@ -1,7 +1,10 @@
 # Pix128
 
-Pix128 is web game project manager.<br>
-It was originally made for managing *pixengine*.
+Pix128 is a **web game projects manager** written in `c++`.
+
+It lets you to make new projects from **templetes** and use different game **engines** and **libraries**.
+
+It is made for managing **pixengine**.
 
 ## Pixengine
-Pixengine is simple, but powerful game engine for web. It has support for libraries, custom game server and custom image editor.
+Pixengine is simple, but powerful game engine for web. It allows you to make different games and applications.
