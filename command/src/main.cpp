@@ -229,16 +229,6 @@ int main(int argc, char* argv[]) {
 	}
 	
 	configPath = soConfigPath.path + "/pix128";
-	#define DEBUG255_COLOR "\e[0;36m"
-#define DEBUG255_RESET "\e[0m"
-#define DEBUG255_SYMBOL "#"
-#define DEBUG255_SPLIT " : "
-
-#define bl(t1) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
-#define bl2(t1, t2) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_SPLIT << t2; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
-#define bl3(t1, t2, t3) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_SPLIT << t2 << DEBUG255_SPLIT << t3; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
-#define LOG(t1) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_RESET << std::endl;
-#define bp bl("bp")
 	if (!fs::exists(configPath)) {
 		try {
 			fs::create_directory(configPath);
