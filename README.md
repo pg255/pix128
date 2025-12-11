@@ -8,3 +8,6 @@ It is made for managing **pixengine**.
 
 ## Pixengine
 Pixengine is simple, but powerful game engine for web. It allows you to make different games and applications.
+
+## Documentation
+[Documentation](documentation/documentation.md)
