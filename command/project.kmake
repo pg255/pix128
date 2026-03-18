@@ -1,0 +1,22 @@
+#version 1.0
+
+#global
+	sources: "src"
+	headers: "include"
+	links: ssl, crypto
+	
+	binarytype: executable
+	binaryname: pix128
+	
+	standard: c++20
+	compiler: g++
+	compilerlauncher: ccache
+
+
+#profile debug-linux
+	buildtype: debug
+	buildpath: "build/debug-linux"
+
+#profile release-linux
+	buildtype: release
+	buildpath: "build/release-linux"
