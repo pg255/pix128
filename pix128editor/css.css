@@ -1,0 +1,169 @@
+body {
+	color: #fff;
+	font-family: Ubuntu;;
+}
+
+#nav {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 50px;
+	height: 100vh;
+	background-color: #444;
+	z-index: 2;
+}
+
+#top {
+	position: absolute;
+	left: 50px;
+	top: 0px;
+	width: calc(100% - 50px);
+	min-height: 50px;
+	background-color: #555;
+	z-index: 2;
+}
+
+#image {
+	position: absolute;
+	left: 50px;
+	top: 50px;
+	width: calc(100vw - 50px);
+	height: calc(100vh - 50px);
+	background-color: #222;
+	overflow: auto;
+}
+
+#canvas {
+	position: absolute;
+	z-index: 1;
+	background-image: url('assets/background.png');
+
+	image-rendering: -moz-crisp-edges;
+	image-rendering: -webkit-crisp-edges;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+	margin: 10px;
+}
+
+#overlay {
+	position: absolute;
+	width: calc(100vw - 50px);
+	height: calc(100vh - 50px);
+	z-index: 2;
+	pointer-events: none;
+	margin: 10px;
+	image-rendering: -moz-crisp-edges;
+	image-rendering: -webkit-crisp-edges;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+}
+
+.icon {
+	display: block;
+	float: left;
+	height: 50px;
+	width: 50px;
+	opacity: 0.8;
+	transition: 200ms;
+	cursor: pointer;
+	
+}
+.icon:hover {
+	opacity: 1;
+}
+
+.button {
+	display: block;
+	float: left;
+	height: 30px;
+	margin: 10px 9px 10px 9px;
+	padding: 0px 10px 0px 10px;
+	background-color: #aaa;
+	border-radius: 8px;
+	line-height: 30px;
+	color: #111;
+	cursor: pointer;
+	transition: 300ms;
+	outline: none;
+}
+
+.button:hover {
+	background-color: #ccc;
+}
+
+.topState {
+	display: none;
+	padding: 0px 9px 0px 9px;
+	height: 50px;
+}
+
+input[type=text] {
+	display: block;
+	float: left;
+	border: 3px solid #000;
+	outline: none;
+	background-color: #888;
+	color: #111;
+	height: 24px;
+	width: 50px;
+	margin: 10px 9px 10px 9px;
+	padding: 0px 10px 0px 10px;
+	border-radius: 8px;
+}
+input[type=text] {
+	display: block;
+	float: left;
+	border: 3px solid #000;
+	outline: none;
+	background-color: #888;
+	color: #111;
+	height: 24px;
+	width: 50px;
+	margin: 10px 9px 10px 9px;
+	padding: 0px 10px 0px 10px;
+	border-radius: 8px;
+}
+
+input[type=color] {
+	display: block;
+	float: left;
+	border: 3px solid #000;
+	background-color: #888;
+	color: #111;
+	height: 30px;
+	margin: 10px 9px 10px 9px;
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+select {
+	display: block;
+	float: left;
+	border: 3px solid #000;
+	background-color: #888;
+	color: #111;
+	line-height: 30px;
+	padding: 0px 10px 0px 10px;
+	height: 30px;
+	margin: 10px 9px 10px 9px;
+	border-radius: 8px;
+	outline: none;
+	cursor: pointer;
+}
+
+select:hover {
+	background-color: #aaa;
+}
+
+.text {
+	display: block;
+	float: left;
+	color: #ccc;
+	line-height: 30px;
+	margin: 10px -8px 10px 9px;
+	padding: 0px 10px 0px 10px;
+}
+
+#other {
+	display: none;
+}

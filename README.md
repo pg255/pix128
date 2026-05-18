@@ -1,3 +1,7 @@
+**This project is now archived.**
+
+It is time to move on.
+
 # Pix128
 
 Pix128 is a **web game projects manager** written in `c++`.

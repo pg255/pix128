@@ -1,8 +1,8 @@
 #include <iostream>
 #include <string>
 #include <filesystem>
+#include <vector>
 
-//#include "debug255.hpp"
 #include "toml.hpp"
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
@@ -10,51 +10,24 @@
 
 namespace fs = std::filesystem;
 
-//// Debug255 ////
-
-#define DEBUG255_COLOR "\e[0;36m"
-#define DEBUG255_RESET "\e[0m"
-#define DEBUG255_SYMBOL "#"
-#define DEBUG255_SPLIT " : "
-
-#define bl(t1) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
-#define bl2(t1, t2) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_SPLIT << t2; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
-#define bl3(t1, t2, t3) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_SPLIT << t2 << DEBUG255_SPLIT << t3; std::cin.get(); std::cout << DEBUG255_RESET << std::endl;
-#define LOG(t1) std::cout << DEBUG255_COLOR << DEBUG255_SYMBOL << __LINE__ << " " << t1 << DEBUG255_RESET << std::endl;
-#define bp bl("bp")
-
-//// Project macros ////
-
-#define VERSION "0.0.0"
-
-#define ORANGE1 "\e[38;5;208m"
-#define ORANGE2 "\e[38;5;214m"
-#define ORANGE3 "\e[38;5;220m"
-#define RESET "\e[0m"
-
-#define ERROR(msg) std::cerr << ORANGE1 << "ERROR: " << msg << RESET << '\n'
-
-#define REPO_DOMAIN "raw.githubusercontent.com"
-#define REPO_PATH "/pg255/pix128/refs/heads/main"
-
 //// Global variables ////
 
 std::string configPath;
 
 //// SO aka System Operations ///
- 
+
  /* Functions:
   * downloadAndReadFile()
   * downloadFile()
   * downloadFolder()
-  * 
+  *
   * createFile()
   * readFile()
   * editFile()
-  * 
+  *
   * deleteFolder()
   * copyFolder()
-  * 
+  *
   * listFolders()
   * getConfigFolder()
   */
@@ -80,7 +53,7 @@ struct SoPath {
 
 SoContent downloadAndReadFile(std::string from) {
 	httplib::SSLClient cli(REPO_DOMAIN);
-	
+
 	cli.set_follow_location(true);
 	cli.enable_server_certificate_verification(true);
 
@@ -100,12 +73,12 @@ SoContent downloadAndReadFile(std::string from) {
 		ERROR("Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with error: " << httplib::to_string(res.error()));
 		file.response = SoResponse::repoError;
 	}
-	
+
 	return file;
 }
 
-SoResponse downloadFile(std::string from, std::string to) {	
-	
+SoResponse downloadFile(std::string from, std::string to) {
+
 	httplib::SSLClient cli(REPO_DOMAIN);
 
 	cli.set_follow_location(true);
@@ -141,13 +114,13 @@ SoResponse downloadFile(std::string from, std::string to) {
 		ERROR("Requesting '" << REPO_DOMAIN << REPO_PATH << from << "' failed with error: " << httplib::to_string(res.error()));
 		return SoResponse::repoError;
 	}
-	
+
 	return SoResponse::success;
 }
 
 SoResponse downloadFolder(std::string path) {
 	SoContent fileList = downloadAndReadFile(path + "/.pix128files");
-	
+
 	if (fileList.response == SoResponse::success) {
 		std::stringstream ss(fileList.content);
 		std::string fileName;
@@ -174,14 +147,14 @@ SoResponse downloadFolder(std::string path) {
 
 	SoPath getConfigFolder() {
 		SoPath path;
-		
+
 		const char* appdata = getenv("APPDATA");
 		if (appdata) {
 			path.path = std::string(appdata);
 			path.response = SoResponse::success;
 			return path;
 		}
-		
+
 		// Fallback: try to get USERPROFILE
 		const char* home = getenv("USERPROFILE");
 		if (home) {
@@ -189,7 +162,7 @@ SoResponse downloadFolder(std::string path) {
 			path.response = SoResponse::success;
 			return path;
 		}
-		
+
 		path.response = SoResponse::localNotFound;
 		ERROR("Cannot find config folder path (APPDATA not set)");
 		return path;
@@ -222,12 +195,14 @@ SoResponse downloadFolder(std::string path) {
 //// main ////
 
 int main(int argc, char* argv[]) {
+	// get config path.
+
 	SoPath soConfigPath = getConfigFolder();
 	if (soConfigPath.response != SoResponse::success) {
 		ERROR("Can't continue without having config path");
 		return 1;
 	}
-	
+
 	configPath = soConfigPath.path + "/pix128";
 	if (!fs::exists(configPath)) {
 		try {
@@ -244,18 +219,38 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (argc == 1) {
-		std::cout << "Pix128 " << VERSION << "\nRun --help for help" << std::endl;
+		std::cout << "Pix128 " << VERSION << "\nRun \"pix128 --help\" for help" << std::endl;
 		return 0;
 	}
-	if (std::string(argv[1]) == "--help") {
 
+	if (std::string(argv[argc - 1]) == "--help") {
+		int commandPathLength = argc - 2;
+		std::vector<std::string> commandPath(commandPathLength);
+		for (int i = 1; i < argc - 1; i++) {
+			commandPath[i] = std::string(argv[i]);
+		}
+
+		#define IFPOS(i, str) if (commandPathLength <= i || commandPath[i] == str)
+		#define HELPLINE(command, description) std::cout << ORANGE3 << COMMAND << " " << command << ORANGE2 << " # " << description << RESET << "\n";
+
+		IFPOS(0, "--help") {
+			HELPLINE("--help", "shows this screen");
+		}
+		IFPOS(0, "--version") {
+			HELPLINE("--help", "shows this screen");
+		}
+
+		#undef ifpos
+		#undef HELPLINE
 	}
+
 	if (std::string(argv[1]) == "--version") {
 		std::cout << "Pix128 " << VERSION << std::endl;
 	}
+
 	if (std::string(argv[1]) == "engine") {
 		if (std::string(argv[2]) == "download") {
-			
+
 		}
 		if (std::string(argv[2]) == "delete") {
 
@@ -289,7 +284,7 @@ int main(int argc, char* argv[]) {
 				std::cout << "Library \"" << "test" << "\" not found" << std::endl;
 			}
 		}
-		
+
 		if (std::string(argv[1]) == "test2") {
 			SoResponse response = downloadFile("/libraries/template/library.toml", "/libraries/library.toml");
 			if (response == SoResponse::success) {
@@ -298,13 +293,14 @@ int main(int argc, char* argv[]) {
 				std::cout << "Library \"" << "test" << "\" not found" << std::endl;
 			}
 		}
-		
+
 		if (std::string(argv[1]) == "test3") {
 			SoResponse folder = downloadFolder("/templates/template/");
 			if (folder == SoResponse::success) {
 				LOG("YAY!");
 			}
 		}
+
 	#endif
 
 	return 0;

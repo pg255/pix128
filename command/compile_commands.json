@@ -1,0 +1,14 @@
+[
+    {
+        "directory": "/home/prog/proj/pix128/command",
+        "command": "ccache g++ -std=c++23 --embed-dir=templates -DNDEBUG -g0 -O2 -I/home/prog/proj/pix128/command/include -c /home/prog/proj/pix128/command/src/main.cpp -o /home/prog/proj/pix128/command/build/release-linux/obj/main.o",
+        "file": "/home/prog/proj/pix128/command/src/main.cpp",
+        "output": "/home/prog/proj/pix128/command/build/release-linux/obj/main.o"
+    },
+    {
+        "directory": "/home/prog/proj/pix128/command",
+        "command": "ccache g++ -std=c++23 --embed-dir=templates -DNDEBUG -g0 -O2 -I/home/prog/proj/pix128/command/include -c /home/prog/proj/pix128/command/src/log.cpp -o /home/prog/proj/pix128/command/build/release-linux/obj/log.o",
+        "file": "/home/prog/proj/pix128/command/src/log.cpp",
+        "output": "/home/prog/proj/pix128/command/build/release-linux/obj/log.o"
+    }
+]

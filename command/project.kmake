@@ -1,22 +1,25 @@
 #version 1.0
 
+
 #global
 	sources: "src"
 	headers: "include"
-	links: ssl, crypto
 	
 	binarytype: executable
 	binaryname: pix128
 	
-	standard: c++20
+	standard: c++23
 	compiler: g++
 	compilerlauncher: ccache
+	compileflags: -embed-dir=templates
+	
+	customflags: export-compile-commands, export-vscode-sln
 
 
 #profile debug-linux
 	buildtype: debug
 	buildpath: "build/debug-linux"
-
+	
 #profile release-linux
 	buildtype: release
 	buildpath: "build/release-linux"

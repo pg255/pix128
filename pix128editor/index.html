@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Pix255 Image Editor</title>
+		<meta name="description" content=""> <!-- change -->
+		<meta name="keywords" content=""> <!-- change -->
+		<meta charset="UTF-8">
+		<!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
+		<link rel="stylesheet" href="css.css">
+	</head>
+	<body onresize="resize()" onmousedown="isMouseDown = true" onmouseup="isMouseDown = false">
+		<div id="nav">
+			<img src="assets/new.png" class="icon" onclick="switchTop('picture')">
+			<img src="assets/draw.png" class="icon" onclick="switchTop('draw')">
+			<img src="assets/collider.png" class="icon" onclick="switchTop('collider')">
+		</div>
+		<div id="top">
+			<div id="picture" class="topState" style="display: block;">
+				<div class="button" onclick="document.getElementById('fileUpload').click()">Upload Image</div>
+				<div class="button" onclick="download()">Download Image</div>
+				<div class="text">Width:</div>
+				<input type="text" oninput="setSize(this.value, imageHeight)" id="canvasWidth">
+				<div class="text">Height:</div>
+				<input type="text" oninput="setSize(imageWidth, this.value)" id="canvasHeight">
+				<div class="text">Zoom level:</div>
+				<input type="text" oninput="zoomImage(this.value)" id="canvasZoom">
+				<div class="button" onclick="fit()">Fit Image</div>
+			</div>
+			<div id="draw" class="topState">
+				<div class="text">Stroke Color:</div>
+				<input type="color" id="drawColor" value="#ffff00">
+				<div class="text">Stroke Size:</div>
+				<input type="text" id="drawSize" value="1">
+				<div class="text">Stroke opacity:</div>
+				<input type="text" id="drawOpacity" value="1">
+				<select id="drawMode">
+					<option value="square">Draw with squares</option>
+					<option value="circle">Draw with circles</option>
+					<option value="erase">Erase</option>
+				</select>
+				<select id="drawPressure">
+					<option value="with">Draw with pen pressure</option>
+					<option value="without">Draw without pen pressure</option>
+				</select>
+			</div>
+			<div id="collider" class="topState">
+				<div class="text">Cursor X:</div>
+				<input type="text" oninput="moveCursor(this.value, cursorY)" id="cursorX">
+				<div class="text">Cursor Y:</div>
+				<input type="text" oninput="moveCursor(cursorX, this.value)" id="cursorY">
+				<div class="button" onclick="moveCursor(colliderStartX, colliderStartY)">Start cords</div>
+				<input type="text" oninput="setStartCords(this.value, colliderStartY)" id="startX">
+				<input type="text" oninput="setStartCords(colliderStartX, this.value)" id="startY">
+				<div class="button" onclick="moveCursor(colliderEndX, colliderEndY)">End cords</div>
+				<input type="text" oninput="setEndCords(this.value, colliderEndY)" id="endX">
+				<input type="text" oninput="setEndCords(colliderEndX, this.value)" id="endY">
+				<div class="button" onclick="addData();">Add</div>
+				<div class="text">Data: </div>
+				<input type="text" onchange="setData(JSON.parse(this.value))" style="width: 100px;" id="colliderData">
+			</div>
+		</div>
+		<div id="image">
+			<canvas id="canvas" onpointermove="mouseMove(event)" onclick="click(event)"></canvas>
+			<canvas id="overlay"></canvas>
+		</div>
+
+		<div id="other">
+			<input type="file" id="fileUpload">
+		</div>
+		<script src="js.js"></script>
+	</body>
+</html>

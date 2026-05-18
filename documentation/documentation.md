@@ -8,10 +8,10 @@ It was originally made for managing *pixengine*.
 
 **Libraries** and **templates** are **pix128 packages**.
 
-Every package must have `.pix128files` file with list of all files in the package, excluding `.pix128files` itself. This system allows you to download packages without a rate limit. \
+Every package is required have `.pix128files` file with list of all files in the package, excluding `.pix128files` itself.\
 <small>
-(It works by http-requesting all files listed in `.pix128files` from `raw.githubusercontent.com`.
-Other way to impliment this without `.pix128files` would be to use GitHub API to get list of files, but GitHub API has rate limit.)
+(It works by HTTP-requesting all files listed in `.pix128files` from `raw.githubusercontent.com`.
+Other way to implement this without `.pix128files` would be to use GitHub API to get list of files, but GitHub API has rate limit.)
 </small>
 
 ```
